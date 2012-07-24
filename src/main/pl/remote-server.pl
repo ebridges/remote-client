@@ -1,7 +1,6 @@
 #!/usr/bin/perl -w
 
 use strict;
-use feature 'switch';
 use IO::Socket qw(:DEFAULT :crlf);
 use IO::Select;
 use POSIX qw/strftime/;
@@ -12,6 +11,7 @@ use constant PORT => 2007;
 my $port = shift || PORT;
 
 my $stopped = undef;
+my $disconnectRequest = undef;
 $SIG{INT} = sub { &log('shutting down.') ; $stopped = 'yes' };
 
 my $sock = IO::Socket::INET-> new (
@@ -25,9 +25,7 @@ $selector->add($sock);
 
 &log("waiting for incoming connections on port %s", $port);
 
-while( not $stopped ) {
-    my @read_handles = $selector->can_read(undef);
-
+while( not $stopped and (my @read_handles = $selector->can_read(undef)) ) {
     for my $read_handle (@read_handles) {
         if($read_handle == $sock) {
             my $new_socket = $read_handle->accept();
@@ -36,7 +34,7 @@ while( not $stopped ) {
         } else {
             my $request;
             my $status = &read_request($read_handle, \$request);
-            if($status) {
+            if($status > 0) {
                 &log('read %d bytes from client', $status);
                 if($status > 0) {
                     # normal input
@@ -44,11 +42,15 @@ while( not $stopped ) {
                     &write_response($selector, $response);
                 } else {
                     &log('client closed socket.');
-                }       
+                }
+	    } elsif($status == 0) {
+		&log("read zero bytes from client");
+		$disconnectRequest = 'yes';
             } else {
                 &log("error reading from client: $!");
             }
-	    &finish_request($selector, $read_handle);
+	    &finish_request($selector, $read_handle)
+		if $disconnectRequest;
         }
     }
 }
@@ -58,6 +60,7 @@ sub finish_request {
     my $fh = shift;
     $rs->remove($fh);
     close($fh);
+    $disconnectRequest = undef;
 }
 
 sub read_request {
@@ -73,11 +76,25 @@ sub read_request {
 
 sub handle_request {
     my $request = &clean(shift);
-    my $response = 'ACK';
+    my $response = $request;
 
-    if($request eq '<policy-file-request/>'){
+    if(not $request) {
+	&log('got a disconnect request.');
+	$disconnectRequest = 'yes';
+    }
+
+    elsif($request eq '<policy-file-request/>'){
 	&log('got a x-domain policy request');
 	$response = '<?xml version="1.0"?><cross-domain-policy><allow-access-from domain="*" to-ports="*"/></cross-domain-policy>';
+    }
+
+    elsif($request =~ m/ping/i) {
+	&log('got a ping request.');
+	$response = 'PONG';
+    }
+	
+    elsif($request eq 'READY') {
+	&log('got a READY request.');
     }
 
     elsif($request =~ m/^echo/) {
@@ -113,10 +130,14 @@ sub write_response {
     my $s = shift;
     my $r = shift;
 
-    my @write_handles = $s->can_write(undef);
-    for my $write_handle (@write_handles) {
-	&log("writing response [%s] back to client", $r);
-	syswrite $write_handle, $r . TERM;
+    
+    for my $write_handle (my @write_handles = $s->can_write(undef)) {
+	if($r) {
+	    &log("writing response [%s] back to client", $r);
+	    syswrite $write_handle, $r . TERM;
+	} else {
+	    &log("no message to write");
+	}
     }
 }
 
@@ -124,11 +145,12 @@ sub log {
     my $now = strftime("%Y-%m-%d/%H:%M:%S", localtime);
     my $mesg = shift;
     my $m = '';
-    if(scalar @_) {
+    if(not defined $mesg) {
+	$m = 'no message';
+    } elsif(defined @_ and scalar @_) {
     	$m = sprintf $mesg, @_;
     } else {
     	$m = $mesg;
     }
     print STDERR "[$now] $m\n";
-    1;
 }
