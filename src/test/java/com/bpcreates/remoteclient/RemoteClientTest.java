@@ -15,8 +15,10 @@ public class RemoteClientTest {
     public static void main(String[] args) throws IOException {
         String type;
         String command;
-        if(args.length != 2) {
-            System.err.println("Usage: RemoteClientTest <type> <command>");
+        String hostname;
+        Integer port;
+        if(args.length != 4) {
+            System.err.println("Usage: RemoteClientTest <type> <command> <host> <port>");
         }
 
         if(notEmpty(args[0])) {
@@ -31,7 +33,19 @@ public class RemoteClientTest {
             command = "start";
         }
 
-        RemoteClient client = RemoteClientFactory.i(type, "localhost", 2007);
+        if(notEmpty(args[2])) {
+            hostname = args[2].trim();
+        } else {
+            hostname = "localhost";
+        }
+
+        if(notEmpty(args[3])) {
+            port = Integer.valueOf(args[3].trim());
+        } else {
+            port = 2007;
+        }
+
+        RemoteClient client = RemoteClientFactory.i(type, hostname, port);
         try {
             client.open();
             Request request = new Request(command);
