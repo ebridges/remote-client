@@ -42,10 +42,10 @@ public class RemoteChannelClient implements RemoteClient {
             throw new IllegalStateException("socket channel not opened.");
         }
         while (this.socketChannel.isConnectionPending()) {
-            Logi(TAG, "socket channel is still pending connection, going to finish.");
+            Logd(TAG, "   socket channel is still pending connection...");
             this.socketChannel.finishConnect();
-            Logd(TAG, "socket channel finished connecting.");
         }
+        Logd(TAG, "socket channel connected to "+socketAddress);
 
         ByteBuffer buf = ByteBuffer.allocate(ioBufferSize);
         buf.clear();
