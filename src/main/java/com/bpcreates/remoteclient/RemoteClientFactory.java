@@ -9,7 +9,11 @@ import java.nio.charset.Charset;
  * Time: 9:41 PM
  */
 public class RemoteClientFactory {
+  public static final String DEFAULT_CONNECTION_TYPE = "channel";
 
+  public static RemoteClient i(String host, int port) {
+    return i(DEFAULT_CONNECTION_TYPE, host, port);
+  }
 
     public static RemoteClient i(String type, Charset charset, String host, int port) {
         return init(type, charset, host, port);
