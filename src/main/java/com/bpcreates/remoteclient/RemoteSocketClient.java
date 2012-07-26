@@ -19,7 +19,7 @@ import java.nio.charset.CharsetDecoder;
  * Time: 5:03 PM
  */
 public class RemoteSocketClient implements RemoteClient {
-    private static final String TAG = "RemoteSocketClient";
+    private static final String TAG = RemoteSocketClient.class.getName();
 
     private int ioBufferSize;
     private CharsetDecoder decoder;

@@ -13,7 +13,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 
 public class RemoteChannelClient implements RemoteClient {
-    private static final String TAG = "RemoteChannelClient";
+    private static final String TAG = RemoteChannelClient.class.getName();
 
     private int ioBufferSize;
     private CharsetDecoder decoder;
@@ -77,7 +77,7 @@ public class RemoteChannelClient implements RemoteClient {
     }
 
     public void close() throws IOException {
-        if (this.socketChannel.isOpen()) {
+        if (null != this.socketChannel && this.socketChannel.isOpen()) {
             this.socketChannel.close();
         }
     }
