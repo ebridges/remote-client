@@ -6,7 +6,8 @@ CP=${CP}:target/classes
 
 CLASS=com.bpcreates.remoteclient.RemoteClientTest
 
-HOST='bpcreates.com'
+#HOST='bpcreates.com'
+HOST='localhost'
 PORT='10005'
 TYPES=(channel socket)
 ARGS=('READY' 'ping' 'PING' 'echo:harry' '<policy-file-request/>' 'asdfasdfasdf' '')
