@@ -20,6 +20,18 @@ public class RemoteChannelClient implements RemoteClient {
     private SocketChannel socketChannel;
     private InetSocketAddress socketAddress;
 
+    /*
+    Create a thread that contains a loop and select logic and which will call back on
+    accept, read, write, and close(?)
+
+    When message is submitted, add it to a queue read by thread, and cause the thread to wake up
+    by calling wakeup on the selector (maybe add a method to the thread callWakeup()??)
+
+    closest example i could find:
+    http://stackoverflow.com/questions/9912509/sending-multiple-messages-through-only-one-socketchannel
+     */
+
+
     public RemoteChannelClient(Charset charset, String serverHost, int serverPort) {
         this.ioBufferSize = 1024;
         socketAddress = new InetSocketAddress(serverHost, serverPort);
