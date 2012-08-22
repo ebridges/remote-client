@@ -55,18 +55,17 @@ sub startSocket{
 		    $new = $lsn->accept;
 		    $sel->add($new);
 		    push( @data, fileno($new) . " has joined.");
-		    warn "Connection from " . $new->peerhost . ".\n";
+		    warn "Connection from " . $new->peerhost . ", listening on socket ". $new ."\n";
 		    &logData("Connection from " . $new->peerhost);
 		}
 		
 		# Handle connection
 		else {
-						
 		    $input = <$fh>;
 		    $input =~ s/\s+$//;
 		    chomp $input;
 		    warn "GOT INPUT '$input'";
-		    &logData("GOT INPUT:$input");
+		    &logData("GOT INPUT:$input from ". $fh);
 		    
 		    #just spit back whatever you receive
 		    if($input ne ""){
