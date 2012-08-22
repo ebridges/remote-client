@@ -19,10 +19,8 @@ public class IOClientIntegrationTest {
     private static final String TEST_HOST = "127.0.0.1";
     private static final Integer TEST_PORT = 10005;
 
-    private static Thread mockServerThread;
     private static EchoServer mockServer;
 
-    private Thread testClientThread;
     private IOClient testClient;
     private IOClientCallback callback;
 
@@ -30,7 +28,7 @@ public class IOClientIntegrationTest {
     public static void startServer() throws IOException {
         InetAddress address = InetAddress.getLocalHost();
         mockServer = new EchoServer(address, TEST_PORT);
-        mockServerThread = new Thread(mockServer);
+        Thread mockServerThread = new Thread(mockServer);
         mockServerThread.start();
     }
 
@@ -42,7 +40,7 @@ public class IOClientIntegrationTest {
 
     @Test
     public void pingServer() throws IOException, InterruptedException {
-        testClientThread = new Thread(testClient);
+        Thread testClientThread = new Thread(testClient);
         testClientThread.start();
         this.callback.sendData();
         Thread.sleep(90000);
@@ -95,11 +93,13 @@ public class IOClientIntegrationTest {
 
             @Override
             public String sendData() {
+                log("sendData() called.");
                 return message;
             }
 
             @Override
             public void onDataDelivered() {
+                log("onDataDelivered() called.");
                 this.message = null;
             }
         };
