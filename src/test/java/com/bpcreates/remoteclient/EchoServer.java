@@ -20,7 +20,7 @@ import java.util.*;
  * Time: 11:38 AM
  */
 
-public class EchoServer {
+public class EchoServer implements Runnable {
     private InetAddress addr;
     private int port;
     private Selector selector;
@@ -32,6 +32,15 @@ public class EchoServer {
         this.port = port;
         dataMap = new HashMap<SocketChannel,List<byte[]>>();
         started = false;
+    }
+
+    @Override
+    public void run() {
+        try {
+            this.startServer();
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     public boolean isStarted() {
