@@ -25,21 +25,27 @@ public class EchoServer {
     private int port;
     private Selector selector;
     private Map<SocketChannel,List<byte[]>> dataMap;
+    private boolean started;
 
     public EchoServer(InetAddress addr, int port) throws IOException {
         this.addr = addr;
         this.port = port;
         dataMap = new HashMap<SocketChannel,List<byte[]>>();
+        started = false;
+    }
+
+    public boolean isStarted() {
+        return started;
     }
 
     public void stopServer() throws IOException {
-        if(null != selector && selector.isOpen()) {
-            selector.close();
-        }
         for(SocketChannel channel : dataMap.keySet()) {
             if(null != channel && channel.isConnected()) {
                 channel.close();
             }
+        }
+        if(null != selector && selector.isOpen()) {
+            selector.close();
         }
     }
 
@@ -58,6 +64,7 @@ public class EchoServer {
 
         //noinspection InfiniteLoopStatement
         while (true) {
+            started = true;
             // wait for events
             this.selector.select();
 
@@ -88,6 +95,7 @@ public class EchoServer {
     }
 
     private void accept(SelectionKey key) throws IOException {
+        log("accept() called with key: "+key);
         ServerSocketChannel serverChannel = (ServerSocketChannel) key.channel();
         SocketChannel channel = serverChannel.accept();
         channel.configureBlocking(false);
@@ -105,6 +113,7 @@ public class EchoServer {
     }
 
     private void read(SelectionKey key) throws IOException {
+        log("read() called with key: "+key);
         SocketChannel channel = (SocketChannel) key.channel();
 
         ByteBuffer buffer = ByteBuffer.allocate(8192);
@@ -135,21 +144,48 @@ public class EchoServer {
     }
 
     private void write(SelectionKey key) throws IOException {
+        log("write() called with key "+ key);
         SocketChannel channel = (SocketChannel) key.channel();
-        List<byte[]> pendingData = this.dataMap.get(channel);
-        Iterator<byte[]> items = pendingData.iterator();
-        while (items.hasNext()) {
-            byte[] item = items.next();
-            items.remove();
-            channel.write(ByteBuffer.wrap(item));
+        if(this.dataMap.keySet().size() > 1) {
+            log("multiple channels");
+            for(Map.Entry<SocketChannel,List<byte[]>> me : this.dataMap.entrySet()) {
+                log("channel: "+channel);
+                if(!me.getKey().equals(channel)) {
+                    Iterator<byte[]> items = me.getValue().iterator();
+                    while (items.hasNext()) {
+                        byte[] item = items.next();
+                        items.remove();
+                        channel.write(ByteBuffer.wrap(item));
+                    }
+                }
+            }
+        } else {
+            List<byte[]> pendingData = this.dataMap.get(channel);
+            Iterator<byte[]> items = pendingData.iterator();
+            while (items.hasNext()) {
+                byte[] item = items.next();
+                items.remove();
+                channel.write(ByteBuffer.wrap(item));
+            }
         }
         key.interestOps(SelectionKey.OP_READ);
     }
 
     private void doEcho(SelectionKey key, byte[] data) {
+        log("doEcho() called with key "+ key);
         SocketChannel channel = (SocketChannel) key.channel();
-        List<byte[]> pendingData = this.dataMap.get(channel);
-        pendingData.add(data);
+        if(this.dataMap.keySet().size() > 1) {
+            log("multiple channels");
+            for(Map.Entry<SocketChannel,List<byte[]>> me : this.dataMap.entrySet()) {
+                log("channel: "+channel);
+                if(!me.getKey().equals(channel)) {
+                    me.getValue().add(data);
+                }
+            }
+        } else {
+            List<byte[]> pendingData = this.dataMap.get(channel);
+            pendingData.add(data);
+        }
         key.interestOps(SelectionKey.OP_WRITE);
     }
 
