@@ -2,6 +2,9 @@ package com.bpcreates.remoteclient;
 
 import static java.lang.String.format;
 
+import java.net.InetAddress;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -13,9 +16,14 @@ import java.util.Date;
 public class Util {
     public static final String DEFAULT_CHARSET="UTF-8";
     public static final char TERMINATOR = '\u0000';
+    public static final byte[] TERMINATOR_BYTES = new byte[]{TERMINATOR};
 
     public static boolean notEmpty(String v) {
         return null != v && v.trim().length() > 0;
+    }
+
+    public static boolean isEmpty(String v) {
+        return null == v || v.trim().isEmpty();
     }
 
     public static void Logd(String tag, String mesg) {
@@ -26,12 +34,16 @@ public class Util {
         System.out.println(format("[I] [%s] [%s] %s", now(), tag, mesg));
     }
 
+    public static void Logw(String tag, String mesg) {
+        System.out.println(format("[W] [%s] [%s] %s", now(), tag, mesg));
+    }
+
     public static void Loge(String tag, String mesg) {
-        System.out.println(format("[E] [%s] [%s] Error: %s", now(), tag, mesg));
+        System.err.println(format("[E] [%s] [%s] Error: %s", now(), tag, mesg));
     }
 
     public static void Loge(String tag, String mesg, Throwable t) {
-        System.out.println(format("[E] [%s] [%s] Error: (%s) %s", now(), tag, t.getMessage(), mesg));
+        System.err.println(format("[E] [%s] [%s] Error: (%s) %s", now(), tag, t.getMessage(), mesg));
     }
 
     public static String now() {
@@ -48,6 +60,12 @@ public class Util {
         result[3] = (byte)(integer & 0x000000FF);
 
         return result;
+    }
+
+    public static String toString(SelectionKey key) {
+        InetAddress address = ((SocketChannel) key.channel()).socket().getInetAddress();
+        Integer portnum = ((SocketChannel) key.channel()).socket().getPort();
+        return format("%s:%d (A:%s|C:%s|R:%s|W:%s)", address, portnum, key.isAcceptable(), key.isConnectable(), key.isReadable(), key.isWritable());
     }
 
     private Util() {
