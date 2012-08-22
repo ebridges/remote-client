@@ -1,10 +1,10 @@
 package com.bpcreates.ioclient;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import com.bpcreates.remoteclient.EchoServer;
+import org.junit.*;
 
 import java.io.IOException;
+import java.net.InetAddress;
 
 import static com.bpcreates.remoteclient.Util.now;
 import static java.lang.String.format;
@@ -19,8 +19,20 @@ public class IOClientIntegrationTest {
     private static final String TEST_HOST = "127.0.0.1";
     private static final Integer TEST_PORT = 10005;
 
+    private static Thread mockServerThread;
+    private static EchoServer mockServer;
+
+    private Thread testClientThread;
     private IOClient testClient;
-    IOClientCallback callback;
+    private IOClientCallback callback;
+
+    @BeforeClass
+    public static void startServer() throws IOException {
+        InetAddress address = InetAddress.getLocalHost();
+        mockServer = new EchoServer(address, TEST_PORT);
+        mockServerThread = new Thread(mockServer);
+        mockServerThread.start();
+    }
 
     @Before
     public void initTestClient() throws IOException {
@@ -30,8 +42,8 @@ public class IOClientIntegrationTest {
 
     @Test
     public void pingServer() throws IOException, InterruptedException {
-        Thread t = new Thread(testClient);
-        t.start();
+        testClientThread = new Thread(testClient);
+        testClientThread.start();
         this.callback.sendData();
         Thread.sleep(90000);
     }
@@ -39,7 +51,14 @@ public class IOClientIntegrationTest {
     @After
     public void shutdownTestClient() throws IOException {
         if(null != this.testClient) {
-///            testClient.shutdown();
+            testClient.shutdown();
+        }
+    }
+
+    @AfterClass
+    public static void stopServer() throws IOException {
+        if(null != mockServer && mockServer.isStarted()) {
+            mockServer.stopServer();
         }
     }
 
