@@ -19,35 +19,41 @@ public class IOClientIntegrationTest {
     private static final String TEST_HOST = "127.0.0.1";
     private static final Integer TEST_PORT = 10005;
 
+    private static Thread mockServerThread;
     private static EchoServer mockServer;
 
     private IOClient testClient;
     private IOClientCallback callback;
 
-    @BeforeClass
-    public static void startServer() throws IOException {
+    @Before
+    public void startServer() throws IOException {
+        log("startServer() called.");
         InetAddress address = InetAddress.getLocalHost();
         mockServer = new EchoServer(address, TEST_PORT);
-        Thread mockServerThread = new Thread(mockServer);
+        mockServerThread = new Thread(mockServer);
         mockServerThread.start();
+        log("mock server thread started.");
     }
 
     @Before
     public void initTestClient() throws IOException {
+        log("initTestClient() called.");
         this.callback = initCallback();
         this.testClient = IOClientFactory.i(TEST_HOST, TEST_PORT, callback);
     }
 
-    @Test
+    // @Test
     public void pingServer() throws IOException, InterruptedException {
+        log("pingServer() called.");
         Thread testClientThread = new Thread(testClient);
         testClientThread.start();
         this.callback.sendData();
-        Thread.sleep(90000);
+        Thread.sleep(60000);
     }
 
     @After
     public void shutdownTestClient() throws IOException {
+        log("shutdownTestClient() called.");
         if(null != this.testClient) {
             testClient.shutdown();
         }
@@ -55,6 +61,7 @@ public class IOClientIntegrationTest {
 
     @AfterClass
     public static void stopServer() throws IOException {
+        log("stopServer() called.");
         if(null != mockServer && mockServer.isStarted()) {
             mockServer.stopServer();
         }
