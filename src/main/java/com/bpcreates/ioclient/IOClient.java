@@ -9,6 +9,6 @@ import java.io.IOException;
  * Time: 5:19 PM
  */
 public interface IOClient extends Runnable {
-    @SuppressWarnings("unused")
+	void sendMessage(String message);
     void shutdown() throws IOException;
 }

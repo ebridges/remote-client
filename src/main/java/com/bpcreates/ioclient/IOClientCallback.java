@@ -38,14 +38,6 @@ public interface IOClientCallback {
     void onShutdown();
 
     /**
-     * Use this method to inject data to be written.  This method should return null if there
-     * is no data to be delevered.
-     *
-     * @return null if no data written, or the data to be written.
-     */
-    String sendData();
-
-    /**
      * Called when data has been successfully delivered to remote server.
      */
     void onDataDelivered();
