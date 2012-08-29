@@ -75,7 +75,7 @@ class IOClientImpl implements IOClient {
         	dataQueue.clear();
         }
         
-        this.callback.onShutdown();
+        this.callback.onClientShutdown();
     }
 
     private void startClient() throws IOException {
@@ -142,7 +142,7 @@ class IOClientImpl implements IOClient {
         }
         Logi(TAG, "channel connection established, switching to listen for RW events.");
         key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-        this.callback.onConnect();
+        this.callback.onClientConnect();
     }
 
     private boolean handleWrite(SelectionKey key) throws IOException {
@@ -165,7 +165,7 @@ class IOClientImpl implements IOClient {
                     if(bytesWritten == bytesToWrite) {
 	                    Logi(TAG, format("wrote %d bytes to remote server.", bytesWritten));
 	                    key.interestOps(SelectionKey.OP_READ);
-	                    this.callback.onDataDelivered();
+	                    this.callback.onClientDataDelivered();
                     } else {
                     	Logi(TAG, format("partial write: %d of %d bytes written.", bytesWritten, bytesToWrite));
                     	// handle partial write by replacing the tip of the queue with the data unwritten.
@@ -213,7 +213,7 @@ class IOClientImpl implements IOClient {
         String dataReceived = new String(charBuffer.array());
         Logd(TAG, format("Data read [%s]", dataReceived));
 
-        this.callback.onDataReceived(dataReceived);
+        this.callback.onClientDataReceived(dataReceived);
     }
 
     private void handleDisconnect(SelectionKey key) throws IOException {
@@ -225,12 +225,12 @@ class IOClientImpl implements IOClient {
         Logi(TAG, format("Connection closed by server: %s", remoteAddr));
         channel.close();
         key.cancel();
-        this.dataQueue.remove(channel);
-        this.callback.onDisconnect();
+        this.dataQueue.clear();
+        this.callback.onClientDisconnect();
     }
 
     private void handleError(Throwable throwable) {
        Loge(TAG, format("caught %s [%s]", throwable.getClass().getSimpleName(), throwable.getMessage()));
-       this.callback.onError(throwable);
+       this.callback.onClientError(throwable);
     }
 }

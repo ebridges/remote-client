@@ -11,17 +11,17 @@ public interface IOClientCallback {
      * Called when exceptions are caught.
      * @param throwable
      */
-    void onError(Throwable throwable);
+    void onClientError(Throwable throwable);
 
     /**
      * Called after the connection to the remote server has been established.
      */
-    void onConnect();
+    void onClientConnect();
 
     /**
      * Called when the remote server has closed the connection, and a read reaches EOF.
      */
-    void onDisconnect();
+    void onClientDisconnect();
 
     /**
      * Called when remote server has sent data.  Data is encoded according to
@@ -29,16 +29,16 @@ public interface IOClientCallback {
      *
      * @param dataReceived
      */
-    void onDataReceived(String dataReceived);
+    void onClientDataReceived(String dataReceived);
 
     /**
      * Called when shutdown of {@link IOClientImpl} has been requested, and after the event loop has
      * completed any pending I/O.
      */
-    void onShutdown();
+    void onClientShutdown();
 
     /**
      * Called when data has been successfully delivered to remote server.
      */
-    void onDataDelivered();
+    void onClientDataDelivered();
 }
