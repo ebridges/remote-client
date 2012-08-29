@@ -3,7 +3,7 @@
 
   <groupId>com.bpcreates</groupId>
   <artifactId>remote-client</artifactId>
-  <version>1.4-SNAPSHOT</version>
+  <version>1.4</version>
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
