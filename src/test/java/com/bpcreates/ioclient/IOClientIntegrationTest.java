@@ -70,34 +70,34 @@ public class IOClientIntegrationTest {
     private IOClientCallback initCallback() {
         IOClientCallback callback = new IOClientCallback() {
             @Override
-            public void onError(Throwable throwable) {
+            public void onClientError(Throwable throwable) {
                 log(format("ERROR: %s", throwable.getMessage()));
                 throwable.printStackTrace(System.out);
             }
 
             @Override
-            public void onConnect() {
-                log("onConnect() called.");
+            public void onClientConnect() {
+                log("onClientConnect() called.");
             }
 
             @Override
-            public void onDisconnect() {
-                log("onDisconnect() called.");
+            public void onClientDisconnect() {
+                log("onClientDisconnect() called.");
             }
 
             @Override
-            public void onDataReceived(String dataReceived) {
-                log(format("onDataReceived('%s')", dataReceived));
+            public void onClientDataReceived(String dataReceived) {
+                log(format("onClientDataReceived('%s')", dataReceived));
             }
 
             @Override
-            public void onShutdown() {
-                log("onShutdown() called.");
+            public void onClientShutdown() {
+                log("onClientShutdown() called.");
             }
 
             @Override
-            public void onDataDelivered() {
-                log("onDataDelivered() called.");
+            public void onClientDataDelivered() {
+                log("onClientDataDelivered() called.");
             }
         };
         return callback;
