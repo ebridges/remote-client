@@ -47,7 +47,7 @@ public class IOClientIntegrationTest {
         log("pingServer() called.");
         Thread testClientThread = new Thread(testClient);
         testClientThread.start();
-        this.callback.sendData();
+        testClient.sendMessage("test-message");
         Thread.sleep(60000);
     }
 
@@ -69,9 +69,6 @@ public class IOClientIntegrationTest {
 
     private IOClientCallback initCallback() {
         IOClientCallback callback = new IOClientCallback() {
-
-            private String message = "test-message";
-
             @Override
             public void onError(Throwable throwable) {
                 log(format("ERROR: %s", throwable.getMessage()));
@@ -99,15 +96,8 @@ public class IOClientIntegrationTest {
             }
 
             @Override
-            public String sendData() {
-                log("sendData() called.");
-                return message;
-            }
-
-            @Override
             public void onDataDelivered() {
                 log("onDataDelivered() called.");
-                this.message = null;
             }
         };
         return callback;
