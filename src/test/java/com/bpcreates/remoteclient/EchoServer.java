@@ -78,9 +78,9 @@ public class EchoServer implements Runnable {
             this.selector.select();
 
             // wakeup to work on selected keys
-            Iterator keys = this.selector.selectedKeys().iterator();
+            Iterator<SelectionKey> keys = this.selector.selectedKeys().iterator();
             while (keys.hasNext()) {
-                SelectionKey key = (SelectionKey) keys.next();
+                SelectionKey key = keys.next();
 
                 // this is necessary to prevent the same key from coming up
                 // again the next time around.
@@ -112,8 +112,8 @@ public class EchoServer implements Runnable {
         // write welcome message
         //channel.write(ByteBuffer.wrap("Welcome, this is the echo server\r\n".getBytes("US-ASCII")));
 
-        Socket socket = channel.socket();
-        SocketAddress remoteAddr = socket.getRemoteSocketAddress();
+    //    Socket socket = channel.socket();
+  //      SocketAddress remoteAddr = socket.getRemoteSocketAddress();
   //      log("Connected to: " + remoteAddr);
 
         // register channel with selector for further IO
