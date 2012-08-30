@@ -1,4 +1,4 @@
-package com.bpcreates.remoteclient;
+package com.bpcreates.common;
 
 import static java.lang.String.format;
 
@@ -70,4 +70,16 @@ public class Util {
 
     private Util() {
     }
+
+  public static String clean(String s) {
+    if(notEmpty(s)) {
+      String ss = s.trim();
+      ss = ss.replaceAll("\n", "");
+      ss = ss.replaceAll("\r", "");
+      ss = ss.replace("\t+", " ");
+      ss = ss.replaceAll("\\s+", " ");
+      return ss;
+    }
+    return "";
+  }
 }

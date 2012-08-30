@@ -1,6 +1,6 @@
 package com.bpcreates.ioclient;
 
-import com.bpcreates.remoteclient.Util;
+import com.bpcreates.common.Util;
 
 import java.io.IOException;
 import java.net.*;
@@ -14,7 +14,7 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-import static com.bpcreates.remoteclient.Util.*;
+import static com.bpcreates.common.Util.*;
 import static java.lang.String.format;
 
 /**

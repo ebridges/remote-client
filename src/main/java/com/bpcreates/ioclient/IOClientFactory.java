@@ -3,7 +3,7 @@ package com.bpcreates.ioclient;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 
-import static com.bpcreates.remoteclient.Util.isEmpty;
+import static com.bpcreates.common.Util.isEmpty;
 
 /**
  * Created with IntelliJ IDEA.

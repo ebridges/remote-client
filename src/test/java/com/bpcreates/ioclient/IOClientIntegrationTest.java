@@ -1,12 +1,12 @@
 package com.bpcreates.ioclient;
 
-import com.bpcreates.remoteclient.EchoServer;
+import com.bpcreates.common.EchoServer;
 import org.junit.*;
 
 import java.io.IOException;
 import java.net.InetAddress;
 
-import static com.bpcreates.remoteclient.Util.now;
+import static com.bpcreates.common.Util.now;
 import static java.lang.String.format;
 
 /**

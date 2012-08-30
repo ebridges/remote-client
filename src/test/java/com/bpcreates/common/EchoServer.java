@@ -1,4 +1,4 @@
-package com.bpcreates.remoteclient;
+package com.bpcreates.common;
 
 
 import java.io.IOException;
