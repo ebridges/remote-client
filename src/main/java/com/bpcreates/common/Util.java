@@ -4,7 +4,9 @@ import static java.lang.String.format;
 
 import java.net.InetAddress;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.channels.spi.AbstractSelectableChannel;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -63,9 +65,35 @@ public class Util {
     }
 
     public static String toString(SelectionKey key) {
-        InetAddress address = ((SocketChannel) key.channel()).socket().getInetAddress();
-        Integer portnum = ((SocketChannel) key.channel()).socket().getPort();
-        return format("%s:%d (A:%s|C:%s|R:%s|W:%s)", address, portnum, key.isAcceptable(), key.isConnectable(), key.isReadable(), key.isWritable());
+      AbstractSelectableChannel channel = (AbstractSelectableChannel) key.channel();
+      InetAddress address;
+      Integer portnum;
+      if(channel instanceof SocketChannel) {
+        address = ((SocketChannel) channel).socket().getInetAddress();
+        portnum = ((SocketChannel) channel).socket().getPort();
+      } else if(channel instanceof ServerSocketChannel) {
+        address = ((ServerSocketChannel) channel).socket().getInetAddress();
+        portnum = ((ServerSocketChannel) channel).socket().getLocalPort();
+      } else {
+        address = null;
+        portnum = null;
+      }
+
+      if(address != null && portnum != null) {
+        return format("%s:%d A:%s|C:%s|R:%s|W:%s",
+            address,
+            portnum,
+            key.isAcceptable(),
+            key.isConnectable(),
+            key.isReadable(),
+            key.isWritable());
+      } else {
+        return format("A:%s|C:%s|R:%s|W:%s",
+            key.isAcceptable(),
+            key.isConnectable(),
+            key.isReadable(),
+            key.isWritable());
+      }
     }
 
     private Util() {
