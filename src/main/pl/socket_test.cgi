@@ -78,7 +78,7 @@ sub startSocket{
 		    	$MESSAGE = 	qq~<?xml version="1.0"?>
 									<cross-domain-policy>
 									  <allow-access-from domain="*" to-ports="*"/>
-									</cross-domain-policy>\0~;
+									</cross-domain-policy>~;
 				&logData("prepared MSG = $MESSAGE");	
 				$CLIENT_READY = 1; 			
 		    }
