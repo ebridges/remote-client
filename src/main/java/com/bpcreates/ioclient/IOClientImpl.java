@@ -1,9 +1,17 @@
 package com.bpcreates.ioclient;
 
-import com.bpcreates.common.Util;
+import static com.bpcreates.common.Util.Logd;
+import static com.bpcreates.common.Util.Loge;
+import static com.bpcreates.common.Util.Logi;
+import static com.bpcreates.common.Util.Logw;
+import static com.bpcreates.common.Util.TERMINATOR_BYTES;
+import static java.lang.String.format;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.SelectionKey;
@@ -12,10 +20,9 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.util.Deque;
 import java.util.Iterator;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.LinkedList;
 
-import static com.bpcreates.common.Util.*;
-import static java.lang.String.format;
+import com.bpcreates.common.Util;
 
 /**
  * Created with IntelliJ IDEA.
@@ -27,23 +34,27 @@ import static java.lang.String.format;
 class IOClientImpl implements IOClient {
     private static final String TAG = IOClientImpl.class.getSimpleName();
 
-    private Selector selector;
-    private SocketChannel channel;
-    private InetAddress address;
-    private int port;
-    private IOClientCallback callback;
-    private Charset charset;
-    
-    private Deque<byte[]> dataQueue;
-    private int bufferSize;
+    private final Selector selector;
+    private final SocketChannel channel;
+    private final IOClientCallback callback;
+    private final Charset charset;
+    private final Deque<byte[]> dataQueue;
+    private final int bufferSize;
 
-    public IOClientImpl(Charset charset, String host, Integer port, IOClientCallback callback, int bufferSize) throws UnknownHostException {
+    public IOClientImpl(Charset charset, String host, Integer port, IOClientCallback callback, int bufferSize) throws IOException {
         this.charset = charset;
-        this.address = InetAddress.getByName(host);
-        this.port = port;
+        InetAddress address = InetAddress.getByName(host);
         this.callback = callback;
-        this.dataQueue = new ConcurrentLinkedDeque<byte[]>();
+// JDK7        this.dataQueue = new ConcurrentLinkedDeque<byte[]>();
+        this.dataQueue = new LinkedList<byte[]>();
         this.bufferSize = bufferSize;
+        this.selector = Selector.open();
+        channel = SocketChannel.open();
+        channel.configureBlocking(false);
+
+        InetSocketAddress remoteServerAddress = new InetSocketAddress(address, port);
+        channel.connect(remoteServerAddress);
+        channel.register(this.selector, SelectionKey.OP_CONNECT);
     }
 
     @Override
@@ -55,7 +66,9 @@ class IOClientImpl implements IOClient {
         }
     }
 
-    public void sendMessage(String message) {
+    // todo jdk7 this syncronization can be removed
+    public synchronized void sendMessage(String message) {
+        Logi(TAG, format("sendMessage(%s)", message));
     	if(Util.notEmpty(message))
     		this.dataQueue.addLast(message.getBytes());
     }
@@ -71,20 +84,19 @@ class IOClientImpl implements IOClient {
         	this.channel.close();
         }
 
-        if(null != dataQueue && !dataQueue.isEmpty()) {
-        	dataQueue.clear();
+        // todo jdk7 this syncronization can be removed
+        if(null != dataQueue) {
+            synchronized (dataQueue) {
+                if(null != dataQueue && !dataQueue.isEmpty()) {
+                    dataQueue.clear();
+                }
+            }
         }
-        
         this.callback.onClientShutdown();
     }
 
     private void startClient() throws IOException {
         Logd(TAG, "startClient() called.");
-
-        this.selector = Selector.open();
-
-        this.initalizeChannel();
-
         while (selector.isOpen()) {
             int count = selector.select();
 
@@ -119,17 +131,6 @@ class IOClientImpl implements IOClient {
                 keys.remove();
             }
         }
-    }
-
-    private void initalizeChannel() throws IOException {
-        Logd(TAG, "initializeChannel() called.");
-
-        channel = SocketChannel.open();
-        channel.configureBlocking(false);
-
-        InetSocketAddress remoteServerAddress = new InetSocketAddress(this.address, this.port);
-        channel.connect(remoteServerAddress);
-        channel.register(this.selector, SelectionKey.OP_CONNECT);
     }
 
     private void handleConnect(SelectionKey key) throws IOException {
@@ -210,7 +211,8 @@ class IOClientImpl implements IOClient {
         buffer.flip();
 
         CharBuffer charBuffer = charset.decode(buffer);
-        String dataReceived = new String(charBuffer.array());
+        // chop off trailing null
+        String dataReceived = charBuffer.subSequence(0, charBuffer.length()-1).toString();
         Logd(TAG, format("Data read [%s]", dataReceived));
 
         this.callback.onClientDataReceived(dataReceived);
@@ -225,7 +227,10 @@ class IOClientImpl implements IOClient {
         Logi(TAG, format("Connection closed by server: %s", remoteAddr));
         channel.close();
         key.cancel();
-        this.dataQueue.clear();
+        // todo jdk7 this syncronization can be removed
+        synchronized (dataQueue) {
+            this.dataQueue.clear();
+        }
         this.callback.onClientDisconnect();
     }
 

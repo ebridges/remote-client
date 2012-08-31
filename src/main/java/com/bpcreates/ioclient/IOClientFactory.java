@@ -1,9 +1,9 @@
 package com.bpcreates.ioclient;
 
-import java.net.UnknownHostException;
-import java.nio.charset.Charset;
-
 import static com.bpcreates.common.Util.isEmpty;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
 
 /**
  * Created with IntelliJ IDEA.
@@ -15,7 +15,7 @@ public class IOClientFactory {
     public static final Charset DEFAULT_CHARSET = Charset.defaultCharset();
     public static final Integer DEFAULT_READBUFFER_SIZE = 8192;
 
-    public static IOClient i(String host, int port, IOClientCallback callback) throws UnknownHostException {
+    public static IOClient i(String host, int port, IOClientCallback callback) throws IOException {
         if(null == callback) {
             throw new IllegalArgumentException("null callback");
         }
