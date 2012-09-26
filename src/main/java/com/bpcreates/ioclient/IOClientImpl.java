@@ -34,36 +34,44 @@ import com.bpcreates.common.Util;
 class IOClientImpl implements IOClient {
     private static final String TAG = IOClientImpl.class.getSimpleName();
 
-    private final Selector selector;
-    private final SocketChannel channel;
+    private Selector selector;
+    private SocketChannel channel;
     private final IOClientCallback callback;
     private final Charset charset;
     private final Deque<byte[]> dataQueue;
     private final int bufferSize;
+    private final String host;
+    private final Integer port;
 
     public IOClientImpl(Charset charset, String host, Integer port, IOClientCallback callback, int bufferSize) throws IOException {
         this.charset = charset;
-        InetAddress address = InetAddress.getByName(host);
+        this.host = host;
+        this.port = port;
         this.callback = callback;
 // JDK7        this.dataQueue = new ConcurrentLinkedDeque<byte[]>();
         this.dataQueue = new LinkedList<byte[]>();
         this.bufferSize = bufferSize;
-        this.selector = Selector.open();
-        channel = SocketChannel.open();
-        channel.configureBlocking(false);
-
-        InetSocketAddress remoteServerAddress = new InetSocketAddress(address, port);
-        channel.connect(remoteServerAddress);
-        channel.register(this.selector, SelectionKey.OP_CONNECT);
     }
 
     @Override
     public void run() {
         try {
+            this.initialize();
             this.startClient();
         } catch (IOException e) {
             handleError(e);
         }
+    }
+
+    private void initialize() throws IOException {
+        this.selector = Selector.open();
+        channel = SocketChannel.open();
+        channel.configureBlocking(false);
+
+        InetAddress address = InetAddress.getByName(host);
+        InetSocketAddress remoteServerAddress = new InetSocketAddress(address, port);
+        channel.connect(remoteServerAddress);
+        channel.register(this.selector, SelectionKey.OP_CONNECT);
     }
 
     // todo jdk7 this syncronization can be removed
