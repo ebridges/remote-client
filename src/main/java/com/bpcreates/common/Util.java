@@ -2,6 +2,9 @@ package com.bpcreates.common;
 
 import static java.lang.String.format;
 
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.net.InetAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
@@ -19,6 +22,8 @@ public class Util {
     public static final String DEFAULT_CHARSET="UTF-8";
     public static final char TERMINATOR = '\u0000';
     public static final byte[] TERMINATOR_BYTES = new byte[]{TERMINATOR};
+    private static final Writer logOutputWriter = new OutputStreamWriter(System.out);
+    private static final Writer logErrorWriter = new OutputStreamWriter(System.err);
 
     public static boolean notEmpty(String v) {
         return null != v && v.trim().length() > 0;
@@ -29,25 +34,34 @@ public class Util {
     }
 
     public static void Logd(String tag, String mesg) {
-        System.out.println(format("[D] [%s] [%s] %s", now(), tag, mesg));
+    	logMesg(logOutputWriter, format("[D] [%s] [%s] %s", now(), tag, mesg));
     }
 
     public static void Logi(String tag, String mesg) {
-        System.out.println(format("[I] [%s] [%s] %s", now(), tag, mesg));
+    	logMesg(logOutputWriter, format("[I] [%s] [%s] %s", now(), tag, mesg));
     }
 
     public static void Logw(String tag, String mesg) {
-        System.out.println(format("[W] [%s] [%s] %s", now(), tag, mesg));
+    	logMesg(logOutputWriter, format("[W] [%s] [%s] %s", now(), tag, mesg));
     }
 
     public static void Loge(String tag, String mesg) {
-        System.err.println(format("[E] [%s] [%s] Error: %s", now(), tag, mesg));
+    	logMesg(logErrorWriter, format("[E] [%s] [%s] Error: %s", now(), tag, mesg));
     }
 
     public static void Loge(String tag, String mesg, Throwable t) {
-        System.err.println(format("[E] [%s] [%s] Error: (%s) %s", now(), tag, t.getMessage(), mesg));
+        logMesg(logErrorWriter, format("[E] [%s] [%s] Error: (%s) %s", now(), tag, t.getMessage(), mesg));
     }
 
+    private static void logMesg(Writer w, String mesg) {
+    	try {
+	    	w.write(mesg);
+	    	w.flush();
+    	} catch (IOException e) {
+    		throw new IllegalArgumentException(e);
+    	}
+    }
+    
     public static String now() {
         SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
         return fmt.format(new Date());
