@@ -121,7 +121,7 @@ class IOClientImpl implements IOClient {
         if(null != dataQueue) {
             Logd(TAG, format("dataQueue has %d pending messages.", dataQueue.size()));
             synchronized (dataQueue) {
-                if(null != dataQueue && !dataQueue.isEmpty()) {
+                if(!dataQueue.isEmpty()) {
                     dataQueue.clear();
                     Logd(TAG, "dataQueue cleared.");
                 }
@@ -208,7 +208,6 @@ class IOClientImpl implements IOClient {
                     int bytesWritten = channel.write(buf);
                     if(bytesWritten == bytesToWrite) {
                         Logi(TAG, format("wrote %d bytes to remote server.", bytesWritten));
-                        key.interestOps(SelectionKey.OP_READ);
                         this.callback.onClientDataDelivered();
                     } else {
                         Logi(TAG, format("partial write: %d of %d bytes written.", bytesWritten, bytesToWrite));
@@ -216,13 +215,11 @@ class IOClientImpl implements IOClient {
                         byte[] remaining = new byte[bytesToWrite-bytesWritten];
                         System.arraycopy(data, bytesWritten, remaining, 0, bytesToWrite-bytesWritten);
                         dataQueue.addFirst(remaining);
-                        key.interestOps(SelectionKey.OP_WRITE);
                         return false;
                     }
             	}
-            } else {
-                key.interestOps(SelectionKey.OP_READ);
             }
+            key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
         }
         return true;
     }
@@ -258,6 +255,8 @@ class IOClientImpl implements IOClient {
         String dataReceived = charBuffer.subSequence(0, charBuffer.length()-1).toString();
         Logd(TAG, format("Data read [%s]", dataReceived));
 
+        key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+        
         this.callback.onClientDataReceived(dataReceived);
     }
 
