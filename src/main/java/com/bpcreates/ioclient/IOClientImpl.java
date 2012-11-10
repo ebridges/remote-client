@@ -44,6 +44,7 @@ class IOClientImpl implements IOClient {
     private final Integer port;
 
     public IOClientImpl(Charset charset, String host, Integer port, IOClientCallback callback, int bufferSize) throws IOException {
+        Logd(TAG, format("Constructing IOClientImpl using [%s][%s:%d][%s][%d]",charset.displayName(), host,port, callback.getClass().getSimpleName(), bufferSize));
         this.charset = charset;
         this.host = host;
         this.port = port;
@@ -51,10 +52,15 @@ class IOClientImpl implements IOClient {
 // JDK7        this.dataQueue = new ConcurrentLinkedDeque<byte[]>();
         this.dataQueue = new LinkedList<byte[]>();
         this.bufferSize = bufferSize;
+
+        // http://stackoverflow.com/a/7453555/87408
+        java.lang.System.setProperty("java.net.preferIPv4Stack", "true");
+        java.lang.System.setProperty("java.net.preferIPv6Addresses", "false");
     }
 
     @Override
     public void run() {
+        Logd(TAG,"running IOClientImpl");
         try {
             this.initialize();
             this.startClient();
@@ -64,50 +70,72 @@ class IOClientImpl implements IOClient {
     }
 
     private void initialize() throws IOException {
+        Logd(TAG, "initializing IOClientImpl...");
         this.selector = Selector.open();
+        Logd(TAG, "... selector opened.");
         channel = SocketChannel.open();
+        Logd(TAG, "... channel opened.");
         channel.configureBlocking(false);
+        Logd(TAG, "... channel configured.");
 
         InetAddress address = InetAddress.getByName(host);
+        Logd(TAG, format("... resolved host (%s) to address (%s)", host, address.getHostAddress()));
         InetSocketAddress remoteServerAddress = new InetSocketAddress(address, port);
+        Logd(TAG, "... configured remote server address");
         channel.connect(remoteServerAddress);
+        Logd(TAG, "... connected remote server address to channel");
         channel.register(this.selector, SelectionKey.OP_CONNECT);
+        Logd(TAG, "... registered selector for this channel.");
     }
 
     // todo jdk7 this syncronization can be removed
     public synchronized void sendMessage(String message) {
         Logi(TAG, format("sendMessage(%s)", message));
-    	if(Util.notEmpty(message))
-    		this.dataQueue.addLast(message.getBytes());
+        if(Util.notEmpty(message)) {
+            Logd(TAG, format("adding message (%s) to dataQueue with %d pending messages", message, dataQueue.size()));
+            this.dataQueue.addLast(message.getBytes());
+        }
+        Logd(TAG, format("dataQueue has %d pending messages", dataQueue.size()));
     }
     
     @Override
     public void shutdown() throws IOException {
         Logi(TAG, "shutdown requested.");
+        cleanUp();
+        Logi(TAG, "ioClient shut down complete.");
+        this.callback.onClientShutdown();
+    }
+
+    private void cleanUp() throws IOException {
         if(null != this.selector && this.selector.isOpen()) {
             this.selector.close();
+            Logd(TAG, "selector closed.");
         }
         
         if(null != channel) {
-        	this.channel.close();
+            this.channel.close();
+            Logd(TAG, "channel closed.");
         }
 
         // todo jdk7 this syncronization can be removed
         if(null != dataQueue) {
+            Logd(TAG, format("dataQueue has %d pending messages.", dataQueue.size()));
             synchronized (dataQueue) {
                 if(null != dataQueue && !dataQueue.isEmpty()) {
                     dataQueue.clear();
+                    Logd(TAG, "dataQueue cleared.");
                 }
             }
-        }
-        this.callback.onClientShutdown();
+        }        
     }
 
     private void startClient() throws IOException {
         Logd(TAG, "startClient() called.");
+        
         while (selector.isOpen()) {
             int count = selector.select();
 
+            Logd(TAG, format("selector is open, got %d selected channels.", count));
             if (count == 0) {
                 continue;
             }
@@ -116,26 +144,32 @@ class IOClientImpl implements IOClient {
             while (keys.hasNext()) {
                 SelectionKey key = keys.next();
 
+                Logd(TAG, format("obtained selection key: %s", Util.toString(key)));
                 if (!key.isValid()) {
                     continue;
                 }
 
                 if (key.isConnectable()) {
+                    Logd(TAG, "key is connectable.");
                     this.handleConnect(key);
                 }
 
                 if (key.isWritable()) {
+                    Logd(TAG, "key is writable.");
                     boolean writeComplete = this.handleWrite(key);
                     if(!writeComplete) {
-                    	// key should not be removed
-                    	continue;
+                        Logd(TAG, "write is incomplete, continuing write later.");
+                        // key should not be removed
+                        continue;
                     }
                 }
 
                 if (key.isReadable()) {
+                    Logd(TAG, "key is readable.");
                     this.handleRead(key);
                 }
 
+                Logd(TAG, "finished with this selector, removing.");
                 keys.remove();
             }
         }
@@ -145,6 +179,7 @@ class IOClientImpl implements IOClient {
         Logd(TAG, format("handleConnect(%s) called.", Util.toString(key)));
 
         SocketChannel channel = (SocketChannel) key.channel();
+        Logd(TAG, "attempting to finish connection.");
         if(!channel.finishConnect()) {
             Logw(TAG, "channel not yet connected, waiting.");
             return;
@@ -159,30 +194,30 @@ class IOClientImpl implements IOClient {
 
         synchronized(dataQueue) {
             if(!dataQueue.isEmpty()) {
-            	byte[] data;
-            	// even though the method is named "poll" this is not a blocking call.
-            	// also, poll removes the data from the queue; we add back any 
-            	// remaining if the write was incomplete
-            	while( (data = dataQueue.poll()) != null) {
-            		int bytesToWrite = data.length + TERMINATOR_BYTES.length;
-            		ByteBuffer buf = ByteBuffer.allocate(bytesToWrite);
+                byte[] data;
+                // even though the method is named "poll" this is not a blocking call.
+                // also, poll removes the data from the queue; we add back any
+                // remaining if the write was incomplete
+                while( (data = dataQueue.poll()) != null) {
+                    int bytesToWrite = data.length + TERMINATOR_BYTES.length;
+                    ByteBuffer buf = ByteBuffer.allocate(bytesToWrite);
                     buf.put(data);
                     buf.put(TERMINATOR_BYTES);
                     buf.flip();
                     SocketChannel channel = (SocketChannel) key.channel();
                     int bytesWritten = channel.write(buf);
                     if(bytesWritten == bytesToWrite) {
-	                    Logi(TAG, format("wrote %d bytes to remote server.", bytesWritten));
-	                    key.interestOps(SelectionKey.OP_READ);
-	                    this.callback.onClientDataDelivered();
+                        Logi(TAG, format("wrote %d bytes to remote server.", bytesWritten));
+                        key.interestOps(SelectionKey.OP_READ);
+                        this.callback.onClientDataDelivered();
                     } else {
-                    	Logi(TAG, format("partial write: %d of %d bytes written.", bytesWritten, bytesToWrite));
-                    	// handle partial write by replacing the tip of the queue with the data unwritten.
-                    	byte[] remaining = new byte[bytesToWrite-bytesWritten];
-                    	System.arraycopy(data, bytesWritten, remaining, 0, bytesToWrite-bytesWritten);
-                    	dataQueue.addFirst(remaining);
-	                    key.interestOps(SelectionKey.OP_WRITE);
-	                    return false;
+                        Logi(TAG, format("partial write: %d of %d bytes written.", bytesWritten, bytesToWrite));
+                        // handle partial write by replacing the tip of the queue with the data unwritten.
+                        byte[] remaining = new byte[bytesToWrite-bytesWritten];
+                        System.arraycopy(data, bytesWritten, remaining, 0, bytesToWrite-bytesWritten);
+                        dataQueue.addFirst(remaining);
+                        key.interestOps(SelectionKey.OP_WRITE);
+                        return false;
                     }
             	}
             } else {
@@ -244,6 +279,12 @@ class IOClientImpl implements IOClient {
 
     private void handleError(Throwable throwable) {
        Loge(TAG, format("caught %s [%s]", throwable.getClass().getSimpleName(), throwable.getMessage()));
+       try {
+        cleanUp();
+        } catch (IOException e) {
+            // jdk7 attach this IOException to the throwable
+            e.printStackTrace(System.err);
+        }
        this.callback.onClientError(throwable);
     }
 }
