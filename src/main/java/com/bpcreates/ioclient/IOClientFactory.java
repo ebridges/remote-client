@@ -12,7 +12,7 @@ import java.nio.charset.Charset;
  * Time: 5:10 PM
  */
 public class IOClientFactory {
-    public static final Charset DEFAULT_CHARSET = Charset.defaultCharset();
+    public static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
     public static final Integer DEFAULT_READBUFFER_SIZE = 8192;
 
     public static IOClient i(String host, int port, IOClientCallback callback) throws IOException {
