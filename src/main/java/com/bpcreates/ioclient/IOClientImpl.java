@@ -70,216 +70,255 @@ class IOClientImpl implements IOClient {
     }
 
     private void initialize() throws IOException {
-        Logd(TAG, "initializing IOClientImpl...");
-        this.selector = Selector.open();
-        Logd(TAG, "... selector opened.");
-        channel = SocketChannel.open();
-        Logd(TAG, "... channel opened.");
-        channel.configureBlocking(false);
-        Logd(TAG, "... channel configured.");
-
-        InetAddress address = InetAddress.getByName(host);
-        Logd(TAG, format("... resolved host (%s) to address (%s)", host, address.getHostAddress()));
-        InetSocketAddress remoteServerAddress = new InetSocketAddress(address, port);
-        Logd(TAG, "... configured remote server address");
-        channel.connect(remoteServerAddress);
-        Logd(TAG, "... connected remote server address to channel");
-        channel.register(this.selector, SelectionKey.OP_CONNECT);
-        Logd(TAG, "... registered selector for this channel.");
+    	try{
+	        Logd(TAG, "initializing IOClientImpl...");
+	        this.selector = Selector.open();
+	        Logd(TAG, "... selector opened.");
+	        channel = SocketChannel.open();
+	        Logd(TAG, "... channel opened.");
+	        channel.configureBlocking(false);
+	        Logd(TAG, "... channel configured.");
+	
+	        InetAddress address = InetAddress.getByName(host);
+	        Logd(TAG, format("... resolved host (%s) to address (%s)", host, address.getHostAddress()));
+	        InetSocketAddress remoteServerAddress = new InetSocketAddress(address, port);
+	        Logd(TAG, "... configured remote server address");
+	        channel.connect(remoteServerAddress);
+	        Logd(TAG, "... connected remote server address to channel");
+	        channel.register(this.selector, SelectionKey.OP_CONNECT);
+	        Logd(TAG, "... registered selector for this channel.");
+    	}catch(Exception e){
+    		
+    	}
     }
 
     // todo jdk7 this syncronization can be removed
     public synchronized void sendMessage(String message) {
-        Logi(TAG, format("sendMessage(%s)", message));
-        if(Util.notEmpty(message)) {
-            Logd(TAG, format("adding message (%s) to dataQueue with %d pending messages", message, dataQueue.size()));
-            this.dataQueue.addLast(message.getBytes());
-        }
-        Logd(TAG, format("dataQueue has %d pending messages", dataQueue.size()));
+    	try{
+	        Logi(TAG, format("sendMessage(%s)", message));
+	        if(Util.notEmpty(message)) {
+	            Logd(TAG, format("adding message (%s) to dataQueue with %d pending messages", message, dataQueue.size()));
+	            this.dataQueue.addLast(message.getBytes());
+	        }
+	        Logd(TAG, format("dataQueue has %d pending messages", dataQueue.size()));
+    	}catch(Exception e){
+    		
+    	}
     }
     
     @Override
     public void shutdown() throws IOException {
-        Logi(TAG, "shutdown requested.");
-        cleanUp();
-        Logi(TAG, "ioClient shut down complete.");
-        this.callback.onClientShutdown();
+    	try{
+	        Logi(TAG, "shutdown requested.");
+	        cleanUp();
+	        Logi(TAG, "ioClient shut down complete.");
+	        this.callback.onClientShutdown();
+    	}catch(Exception e){
+    		
+    	}
     }
 
     private void cleanUp() throws IOException {
-        if(null != this.selector && this.selector.isOpen()) {
-            this.selector.close();
-            Logd(TAG, "selector closed.");
-        }
-        
-        if(null != channel) {
-            this.channel.close();
-            Logd(TAG, "channel closed.");
-        }
-
-        // todo jdk7 this syncronization can be removed
-        if(null != dataQueue) {
-            Logd(TAG, format("dataQueue has %d pending messages.", dataQueue.size()));
-            synchronized (dataQueue) {
-                if(!dataQueue.isEmpty()) {
-                    dataQueue.clear();
-                    Logd(TAG, "dataQueue cleared.");
-                }
-            }
-        }        
+    	try{
+	        if(null != this.selector && this.selector.isOpen()) {
+	            this.selector.close();
+	            Logd(TAG, "selector closed.");
+	        }
+	        
+	        if(null != channel) {
+	            this.channel.close();
+	            Logd(TAG, "channel closed.");
+	        }
+	
+	        // todo jdk7 this syncronization can be removed
+	        if(null != dataQueue) {
+	            Logd(TAG, format("dataQueue has %d pending messages.", dataQueue.size()));
+	            synchronized (dataQueue) {
+	                if(!dataQueue.isEmpty()) {
+	                    dataQueue.clear();
+	                    Logd(TAG, "dataQueue cleared.");
+	                }
+	            }
+	        } 
+    	}catch(Exception e){
+    		
+    	}
     }
 
     private void startClient() throws IOException {
         Logd(TAG, "startClient() called.");
-        
-        while (selector.isOpen()) {
-            int count = selector.select();
-
-            Logd(TAG, format("selector is open, got %d selected channels.", count));
-            if (count == 0) {
-                continue;
-            }
-
-            Iterator<SelectionKey> keys = this.selector.selectedKeys().iterator();
-            while (keys.hasNext()) {
-                SelectionKey key = keys.next();
-
-                Logd(TAG, format("obtained selection key: %s", Util.toString(key)));
-                if (!key.isValid()) {
-                    continue;
-                }
-
-                if (key.isConnectable()) {
-                    Logd(TAG, "key is connectable.");
-                    this.handleConnect(key);
-                }
-
-                if (key.isWritable()) {
-                    Logd(TAG, "key is writable.");
-                    boolean writeComplete = this.handleWrite(key);
-                    if(!writeComplete) {
-                        Logd(TAG, "write is incomplete, continuing write later.");
-                        // key should not be removed
-                        continue;
-                    }
-                }
-
-                if (key.isReadable()) {
-                    Logd(TAG, "key is readable.");
-                    this.handleRead(key);
-                }
-
-                Logd(TAG, "finished with this selector, removing.");
-                keys.remove();
-            }
+        try{
+	        					while (selector.isOpen()) {
+	            int count = selector.select();
+	
+	            Logd(TAG, format("selector is open, got %d selected channels.", count));
+	            if (count == 0) {
+	                continue;
+	            }
+	
+	            Iterator<SelectionKey> keys = this.selector.selectedKeys().iterator();
+	            while (keys.hasNext()) {
+	                SelectionKey key = keys.next();
+	
+	                Logd(TAG, format("obtained selection key: %s", Util.toString(key)));
+	                if (!key.isValid()) {
+	                    continue;
+	                }
+	
+	                if (key.isConnectable()) {
+	                    Logd(TAG, "key is connectable.");
+	                    this.handleConnect(key);
+	                }
+	
+	                if (key.isWritable()) {
+	                    Logd(TAG, "key is writable.");
+	                    try{
+		                    boolean writeComplete = this.handleWrite(key);
+		                    if(!writeComplete) {
+		                        Logd(TAG, "write is incomplete, continuing write later.");
+		                        // key should not be removed
+		                        continue;
+		                    }
+	                    }catch(Exception e){
+	                    	
+	                    }
+	                }
+	
+	                if (key.isReadable()) {
+	                    Logd(TAG, "key is readable.");
+	                    this.handleRead(key);
+	                }
+	
+	                Logd(TAG, "finished with this selector, removing.");
+	                keys.remove();
+	            }
+	        }
+        }catch(Exception e){
+        	
         }
     }
 
     private void handleConnect(SelectionKey key) throws IOException {
-        Logd(TAG, format("handleConnect(%s) called.", Util.toString(key)));
-
-        SocketChannel channel = (SocketChannel) key.channel();
-        Logd(TAG, "attempting to finish connection.");
-        if(!channel.finishConnect()) {
-            Logw(TAG, "channel not yet connected, waiting.");
-            return;
-        }
-        Logi(TAG, "channel connection established, switching to listen for RW events.");
-        key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-        this.callback.onClientConnect();
+    	try{
+	        Logd(TAG, format("handleConnect(%s) called.", Util.toString(key)));
+	
+	        SocketChannel channel = (SocketChannel) key.channel();
+	        Logd(TAG, "attempting to finish connection.");
+	        if(!channel.finishConnect()) {
+	            Logw(TAG, "channel not yet connected, waiting.");
+	            return;
+	        }
+	        Logi(TAG, "channel connection established, switching to listen for RW events.");
+	        key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+	        this.callback.onClientConnect();
+    	}catch(Exception e){
+    		
+    	}
     }
 
     private boolean handleWrite(SelectionKey key) throws IOException {
-        Logd(TAG, format("handleWrite(%s) called.", Util.toString(key)));
-
-        synchronized(dataQueue) {
-            if(!dataQueue.isEmpty()) {
-                byte[] data;
-                // even though the method is named "poll" this is not a blocking call.
-                // also, poll removes the data from the queue; we add back any
-                // remaining if the write was incomplete
-                while( (data = dataQueue.poll()) != null) {
-                    int bytesToWrite = data.length + TERMINATOR_BYTES.length;
-                    ByteBuffer buf = ByteBuffer.allocate(bytesToWrite);
-                    buf.put(data);
-                    buf.put(TERMINATOR_BYTES);
-                    buf.flip();
-                    SocketChannel channel = (SocketChannel) key.channel();
-                    int bytesWritten = channel.write(buf);
-                    if(bytesWritten == bytesToWrite) {
-                        Logi(TAG, format("wrote %d bytes to remote server.", bytesWritten));
-                        this.callback.onClientDataDelivered();
-                    } else {
-                        Logi(TAG, format("partial write: %d of %d bytes written.", bytesWritten, bytesToWrite));
-                        // handle partial write by replacing the tip of the queue with the data unwritten.
-                        byte[] remaining = new byte[bytesToWrite-bytesWritten];
-                        System.arraycopy(data, bytesWritten, remaining, 0, bytesToWrite-bytesWritten);
-                        dataQueue.addFirst(remaining);
-                        return false;
-                    }
-            	}
-            }
-            key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-        }
-        return true;
+    	try{
+    		Logd(TAG, format("handleWrite(%s) called.", Util.toString(key)));
+	
+	        synchronized(dataQueue) {
+	            if(!dataQueue.isEmpty()) {
+	                byte[] data;
+	                // even though the method is named "poll" this is not a blocking call.
+	                // also, poll removes the data from the queue; we add back any
+	                // remaining if the write was incomplete
+	                while( (data = dataQueue.poll()) != null) {
+	                    int bytesToWrite = data.length + TERMINATOR_BYTES.length;
+	                    ByteBuffer buf = ByteBuffer.allocate(bytesToWrite);
+	                    buf.put(data);
+	                    buf.put(TERMINATOR_BYTES);
+	                    buf.flip();
+	                    SocketChannel channel = (SocketChannel) key.channel();
+	                    int bytesWritten = channel.write(buf);
+	                    if(bytesWritten == bytesToWrite) {
+	                        Logi(TAG, format("wrote %d bytes to remote server.", bytesWritten));
+	                        this.callback.onClientDataDelivered();
+	                    } else {
+	                        Logi(TAG, format("partial write: %d of %d bytes written.", bytesWritten, bytesToWrite));
+	                        // handle partial write by replacing the tip of the queue with the data unwritten.
+	                        byte[] remaining = new byte[bytesToWrite-bytesWritten];
+	                        System.arraycopy(data, bytesWritten, remaining, 0, bytesToWrite-bytesWritten);
+	                        dataQueue.addFirst(remaining);
+	                        return false;
+	                    }
+	            	}
+	            }
+	            key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+	        }
+	        return true;
+    	}catch(Exception e){
+    		return false;
+    	}
     }
 
     private void handleRead(SelectionKey key) throws IOException {
-        Logd(TAG, format("handleRead(%s) called.", Util.toString(key)));
-
-        SocketChannel channel = (SocketChannel) key.channel();
-
-        ByteBuffer buffer;
-        if(key.attachment() == null) {
-            buffer = ByteBuffer.allocate(this.bufferSize);
-        } else {
-            buffer = (ByteBuffer) key.attachment();
-        }
-
-        int numRead;
-        int readAttemptCount=0;
-        while ((numRead = channel.read(buffer)) > 0) {
-            // read may take multiple attempts.
-            Logd(TAG, format("read attempt #%d", ++readAttemptCount));
-        }
-
-        if (numRead == -1) {
-            handleDisconnect(key);
-            return;
-        }
-
-        buffer.flip();
-
-        CharBuffer charBuffer = charset.decode(buffer);
-        // chop off trailing null
-
-        // no such method error 11/17/2012
-        // String dataReceived = charBuffer.subSequence(0, charBuffer.length()-1).toString();
-
-        String tmp = charBuffer.toString();
-        String dataReceived = tmp.substring(0, tmp.length()-1);
-
-        Logd(TAG, format("Data read [%s]", dataReceived));
-
-        key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-        
-        this.callback.onClientDataReceived(dataReceived);
+    	try{
+	    						Logd(TAG, format("handleRead(%s) called.", Util.toString(key)));
+	
+	        SocketChannel channel = (SocketChannel) key.channel();
+	
+	        ByteBuffer buffer;
+	        if(key.attachment() == null) {
+	            buffer = ByteBuffer.allocate(this.bufferSize);
+	        } else {
+	            buffer = (ByteBuffer) key.attachment();
+	        }
+	
+	        int numRead;
+	        int readAttemptCount=0;
+	        while ((numRead = channel.read(buffer)) > 0) {
+	            // read may take multiple attempts.
+	            Logd(TAG, format("read attempt #%d", ++readAttemptCount));
+	        }
+	
+	        if (numRead == -1) {
+	            handleDisconnect(key);
+	            return;
+	        }
+	
+	        buffer.flip();
+	
+	        CharBuffer charBuffer = charset.decode(buffer);
+	        // chop off trailing null
+	
+	        // no such method error 11/17/2012
+	        // String dataReceived = charBuffer.subSequence(0, charBuffer.length()-1).toString();
+	
+	        String tmp = charBuffer.toString();
+	        String dataReceived = tmp.substring(0, tmp.length()-1);
+	
+	        Logd(TAG, format("Data read [%s]", dataReceived));
+	
+	        key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+	        
+	        this.callback.onClientDataReceived(dataReceived);
+    	}catch(Exception e){
+    		
+    	}
     }
 
     private void handleDisconnect(SelectionKey key) throws IOException {
-        Logd(TAG, format("handleDisconnect(%s) called.", Util.toString(key)));
-
-        SocketChannel channel = (SocketChannel)key.channel();
-        Socket socket = channel.socket();
-        SocketAddress remoteAddr = socket.getRemoteSocketAddress();
-        Logi(TAG, format("Connection closed by server: %s", remoteAddr));
-        channel.close();
-        key.cancel();
-        // todo jdk7 this syncronization can be removed
-        synchronized (dataQueue) {
-            this.dataQueue.clear();
-        }
-        this.callback.onClientDisconnect();
+    	try{
+	        Logd(TAG, format("handleDisconnect(%s) called.", Util.toString(key)));
+	
+	        SocketChannel channel = (SocketChannel)key.channel();
+	        Socket socket = channel.socket();
+	        SocketAddress remoteAddr = socket.getRemoteSocketAddress();
+	        Logi(TAG, format("Connection closed by server: %s", remoteAddr));
+	        channel.close();
+	        key.cancel();
+	        // todo jdk7 this syncronization can be removed
+	        synchronized (dataQueue) {
+	            this.dataQueue.clear();
+	        }
+	        this.callback.onClientDisconnect();
+    	}catch(Exception e){
+    		
+    	}
     }
 
     private void handleError(Throwable throwable) {

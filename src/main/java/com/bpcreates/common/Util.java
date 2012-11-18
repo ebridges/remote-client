@@ -34,23 +34,23 @@ public class Util {
     }
 
     public static void Logd(String tag, String mesg) {
-    	logMesg(logOutputWriter, format("[D] [%s] [%s] %s", now(), tag, mesg));
+    	//logMesg(logOutputWriter, format("[D] [%s] [%s] %s", now(), tag, mesg));
     }
 
     public static void Logi(String tag, String mesg) {
-    	logMesg(logOutputWriter, format("[I] [%s] [%s] %s", now(), tag, mesg));
+    	//logMesg(logOutputWriter, format("[I] [%s] [%s] %s", now(), tag, mesg));
     }
 
     public static void Logw(String tag, String mesg) {
-    	logMesg(logOutputWriter, format("[W] [%s] [%s] %s", now(), tag, mesg));
+    	//logMesg(logOutputWriter, format("[W] [%s] [%s] %s", now(), tag, mesg));
     }
 
     public static void Loge(String tag, String mesg) {
-    	logMesg(logErrorWriter, format("[E] [%s] [%s] Error: %s", now(), tag, mesg));
+    	//logMesg(logErrorWriter, format("[E] [%s] [%s] Error: %s", now(), tag, mesg));
     }
 
     public static void Loge(String tag, String mesg, Throwable t) {
-        logMesg(logErrorWriter, format("[E] [%s] [%s] Error: (%s) %s", now(), tag, t.getMessage(), mesg));
+        //logMesg(logErrorWriter, format("[E] [%s] [%s] Error: (%s) %s", now(), tag, t.getMessage(), mesg));
     }
 
     private static void logMesg(Writer w, String mesg) {
