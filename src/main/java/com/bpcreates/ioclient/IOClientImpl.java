@@ -252,7 +252,13 @@ class IOClientImpl implements IOClient {
 
         CharBuffer charBuffer = charset.decode(buffer);
         // chop off trailing null
-        String dataReceived = charBuffer.subSequence(0, charBuffer.length()-1).toString();
+
+        // no such method error 11/17/2012
+        // String dataReceived = charBuffer.subSequence(0, charBuffer.length()-1).toString();
+
+        String tmp = charBuffer.toString();
+        String dataReceived = tmp.substring(0, tmp.length()-1);
+
         Logd(TAG, format("Data read [%s]", dataReceived));
 
         key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
